@@ -59,6 +59,6 @@
     "bignumber.js": "^9.1.1",
     "path": "^0.12.7",
     "web3": "^4.0.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.3/xlsx-0.19.3.tgz"
   }
 }
