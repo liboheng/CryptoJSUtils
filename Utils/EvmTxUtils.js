@@ -1,5 +1,4 @@
 const {Web3} = require("web3");
-const path = require("path");
 
 
 class EvmUtils {
@@ -43,7 +42,7 @@ class EvmUtils {
 
 
     async sendTransaction(privateKey, toAddress, encodedData, gasLimit, maxPriorityFeePerGas, maxFeePerGas, value = '0', returnReceipt = false) {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve) => {
             try {
                 privateKey = this.append0xToPrivateKey(privateKey);
                 let senderAddress = await this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
@@ -66,10 +65,60 @@ class EvmUtils {
                             '转账金额': value,
                             '接收地址': toAddress,
                         }]);
+                        if (!returnReceipt) {
+                            resolve(true);
+                        }
                     })
                     .on('receipt', (receipt) => {
                         console.log('\x1b[32m%s\x1b[0m', `交易已打包: ${receipt.transactionHash}`);
-                        resolve(true);
+                        if (returnReceipt) {
+                            resolve(true);
+                        }
+                    })
+                    .on('error', (error) => {
+                        console.log('\x1b[31m%s\x1b[0m', `打包失败: ${error.message}`)
+                        resolve(false);
+                    });
+            } catch (e) {
+                console.log('\x1b[31m%s\x1b[0m', `打包报错: ${e.message}`)
+                resolve(false);
+            }
+        });
+
+    }
+
+    async sendDeftTransaction(privateKey, toAddress, encodedData, gasLimit, gasPrice, value = '0', returnReceipt = false) {
+        return new Promise(async (resolve) => {
+            try {
+                privateKey = this.append0xToPrivateKey(privateKey);
+                let senderAddress = await this.web3.eth.accounts.privateKeyToAccount(privateKey).address;
+                let nonce = await this.web3.eth.getTransactionCount(senderAddress);
+                let txData = {
+                    value: this.web3.utils.toWei(value, 'ether'),
+                    from: senderAddress,
+                    to: toAddress,
+                    nonce: this.web3.utils.toHex(nonce),
+                    data: encodedData,
+                    gasLimit: this.web3.utils.toHex(gasLimit),
+                    gasPrice: gasPrice,
+                };
+                let signedTx = await this.web3.eth.accounts.signTransaction(txData, privateKey);
+                this.web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+                    .on('transactionHash', (hash) => {
+                        console.table([{
+                            'Tx_hash': hash,
+                            '转账金额': value,
+                            '接收地址': toAddress,
+                        }]);
+                        if (!returnReceipt) {
+                            resolve(true);
+                        }
+                    })
+                    .on('receipt', (receipt) => {
+                        console.log('\x1b[32m%s\x1b[0m', `交易已打包: ${receipt.transactionHash}`);
+                        if (returnReceipt) {
+                            resolve(true);
+                        }
                     })
                     .on('error', (error) => {
                         console.log('\x1b[31m%s\x1b[0m', `打包失败: ${error.message}`)
