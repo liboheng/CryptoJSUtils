@@ -40,6 +40,18 @@ class EvmUtils {
         return parseFloat(balanceInEther).toFixed(4);
     }
 
+    async getTokenBalance(address, abi, contractAddress, rpc = this.rpc) {
+        return new Promise(async (resolve, reject) => {
+            let web3 = new Web3(rpc);
+            const tokenContract = new web3.eth.Contract(abi, contractAddress);
+            await tokenContract.methods.balanceOf(address).call(function (err, result) {
+                err ? reject(err) : resolve(result)
+            }).then(function (balance) {
+                resolve(balance)
+            });
+        });
+    }
+
 
     async sendTransaction(privateKey, toAddress, encodedData, gasLimit, maxPriorityFeePerGas, maxFeePerGas, value = '0', returnReceipt = false) {
         return new Promise(async (resolve) => {
